@@ -1,0 +1,3 @@
+[submodule "iot"]
+	path = iot
+	url = git@github.com:pwiklowski/ng-iot-esp-idf-library.git
