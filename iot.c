@@ -211,6 +211,7 @@ void iot_login() {
 }
 
 void iot_handle_event(IotEvent event, const uint8_t* data, const uint16_t data_len) {
+  char* description;
   switch(event) {
     case MSG_STARTED:
       if (config.access_token_length == 0) {
@@ -223,7 +224,9 @@ void iot_handle_event(IotEvent event, const uint8_t* data, const uint16_t data_l
       websocket_open();
       break;
     case MSG_WS_CONNECTED:
-      esp_websocket_client_send(client, iot_device_get_description(), strlen(iot_device_get_description()), 500);
+      description = iot_device_get_description();
+      esp_websocket_client_send(client, description, strlen(description), 500);
+      free(description);
       break;
     case MSG_WS_DATA:
       iot_device_event_handler((const char *)data, data_len);
