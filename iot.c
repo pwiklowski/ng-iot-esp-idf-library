@@ -53,8 +53,8 @@ const char *scope = "profile+openid+offline_access";
 const char* AUTH_TOKEN_URL = "https://wiklosoft.eu.auth0.com/oauth/token";
 const char *AUTH_CODE_URL = "https://wiklosoft.eu.auth0.com/oauth/device/code";
 
-const char* IOT_SERVER_URL_TEMPLATE = "ws://192.168.1.28:8000/device?token=%s";
-//const char *IOT_SERVER_URL_TEMPLATE = "wss://iot.wiklosoft.com/connect/device?token=%s";
+//const char* IOT_SERVER_URL_TEMPLATE = "ws://192.168.1.28:8000/device?token=%s";
+const char *IOT_SERVER_URL_TEMPLATE = "wss://iot.wiklosoft.com/connect/device?token=%s";
 
 void iot_emit_event(IotEvent event_id, uint8_t *data, uint16_t data_len) {
   uint8_t message[data_len + 1];
