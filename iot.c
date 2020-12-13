@@ -95,7 +95,10 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
 void websocket_open(void) {
   sprintf(buf, IOT_SERVER_URL_TEMPLATE, config.access_token);
 
-  esp_websocket_client_config_t websocket_cfg = { .uri = buf };
+  esp_websocket_client_config_t websocket_cfg = {
+      .uri = buf,
+      .pingpong_timeout_sec = 10
+  };
 
   ESP_LOGI(TAG, "Connecting to %s...", websocket_cfg.uri);
 
