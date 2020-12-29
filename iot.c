@@ -144,7 +144,7 @@ int iot_post(char* url, char* post_data, uint16_t post_data_len, int* response_l
 
 void iot_handle_token_update(char* payload) {
   cJSON *json = cJSON_Parse((char *)payload);
-  char *access_token = cJSON_GetObjectItem(json, "access_token")->valuestring;
+  char *access_token = cJSON_GetObjectItem(json, "id_token")->valuestring;
   char *refresh_token = cJSON_GetObjectItem(json, "refresh_token")->valuestring;
 
   memcpy(config.access_token, access_token, strlen(access_token)+1);
