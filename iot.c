@@ -48,7 +48,7 @@ esp_websocket_client_handle_t client;
 MessageBufferHandle_t xMessageBuffer;
 
 const char *audience = "https%3A%2F%2Fwiklosoft.eu.auth0.com%2Fapi%2Fv2%2F";
-const char *scope = "profile+openid+offline_access";
+const char *scope = "name+email+profile+openid+offline_access";
 
 const char* AUTH_TOKEN_URL = "https://wiklosoft.eu.auth0.com/oauth/token";
 const char *AUTH_CODE_URL = "https://wiklosoft.eu.auth0.com/oauth/device/code";
