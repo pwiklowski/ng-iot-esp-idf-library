@@ -55,6 +55,7 @@ const char *AUTH_CODE_URL = "https://wiklosoft.eu.auth0.com/oauth/device/code";
 
 //const char* IOT_SERVER_URL_TEMPLATE = "ws://192.168.1.28:8000/device?token=%s";
 const char *IOT_SERVER_URL_TEMPLATE = "wss://iot.wiklosoft.com/connect/device?token=%s";
+TimerHandle_t timer;
 
 void iot_emit_event(IotEvent event_id, uint8_t *data, uint16_t data_len) {
   uint8_t message[data_len + 1];
@@ -224,7 +225,14 @@ void iot_handle_event(IotEvent event, const uint8_t* data, const uint16_t data_l
       }
       break;
     case MSG_TOKEN_REFRESHED:
-      websocket_open();
+      if (!esp_websocket_client_is_connected(client)) {
+        websocket_open();
+      }
+
+      timer = xTimerCreate("refreshTokenTimer", (12*60*60*1000) / portTICK_PERIOD_MS, pdFALSE
+          , (void*)1, iot_refresh_token);
+      xTimerStart(timer, 0);
+
       break;
     case MSG_WS_CONNECTED:
       description = iot_device_get_description();
