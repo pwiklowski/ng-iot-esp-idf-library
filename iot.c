@@ -21,6 +21,7 @@
 
 #include "cJSON.h"
 #include "config.h"
+#include "ota.h"
 #include "settings.h"
 
 #include "secrets.h"
@@ -51,6 +52,7 @@ MessageBufferHandle_t xMessageBuffer;
 
 
 TimerHandle_t timer;
+TimerHandle_t ota_timer;
 
 void iot_emit_event(IotEvent event_id, uint8_t *data, uint16_t data_len) {
   uint8_t message[data_len + 1];
@@ -274,6 +276,15 @@ void iot_start() {
   iot_device_deinit();
 }
 
+void check_updates() {
+  xTaskCreate(ota_task, "ota_task", 8192, NULL, ESP_TASK_MAIN_PRIO + 1, NULL);
+}
+
+
 void iot_init() {
   xTaskCreate(iot_start, "iot_start", 8192, NULL, ESP_TASK_MAIN_PRIO + 1, NULL);
+
+  check_updates();
+  ota_timer = xTimerCreate("check_updates", (SOFTWARE_UPDATE_CHECK_INTERVAL_MIN*60*1000) / portTICK_PERIOD_MS, pdTRUE , (void*)1, check_updates);
+  xTimerStart(ota_timer, 0);
 }
