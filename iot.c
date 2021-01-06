@@ -24,7 +24,6 @@
 #include "ota.h"
 #include "settings.h"
 
-#include "secrets.h"
 
 extern char *iot_device_get_description();
 extern void iot_device_event_handler(const char *payload, const size_t len);
@@ -48,8 +47,6 @@ char buf[BUF_LEN];
 esp_websocket_client_handle_t client;
 
 MessageBufferHandle_t xMessageBuffer;
-
-
 
 TimerHandle_t timer;
 TimerHandle_t ota_timer;

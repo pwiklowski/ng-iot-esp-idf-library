@@ -14,7 +14,6 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "string.h"
-#include "secrets.h"
 #include "settings.h"
 #define TAG "OTA"
 

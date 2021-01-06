@@ -5,8 +5,8 @@
  *      Author: pwiklowski
  */
 
-#ifndef MAIN_IOT_SETTINGS_H_
-#define MAIN_IOT_SETTINGS_H_
+#ifndef SETTINGS_H_
+#define SETTINGS_H_
 
 
 #define audience "https%3A%2F%2Fwiklosoft.eu.auth0.com%2Fapi%2Fv2%2F"
@@ -23,6 +23,12 @@
 #define SOFTWARE_UPDATE_CHECK_INTERVAL_MIN 30
 
 #define TOKEN_REFRESH_INTERVAL_MIN 12*60
+
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+
+#define CLIENT_ID ""
+#define CLIENT_SECRET ""
 
 
 #endif /* MAIN_IOT_SETTINGS_H_ */
