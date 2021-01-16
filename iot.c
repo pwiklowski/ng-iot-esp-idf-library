@@ -257,9 +257,7 @@ void iot_handle_event(IotEvent event, const uint8_t* data, const uint16_t data_l
 
       break;
     case MSG_WS_CONNECTED:
-      description = iot_device_get_description();
-      esp_websocket_client_send(client, description, strlen(description), 500);
-      free(description);
+
       break;
     case MSG_WS_DATA:
       iot_device_event_handler((const char *)data, data_len);
@@ -304,7 +302,6 @@ void iot_start() {
 void check_updates() {
   xTaskCreate(ota_task, "ota_task", 8192, NULL, ESP_TASK_MAIN_PRIO + 1, NULL);
 }
-
 
 void iot_init() {
   xTaskCreate(iot_start, "iot_start", 8192, NULL, ESP_TASK_MAIN_PRIO + 1, NULL);
