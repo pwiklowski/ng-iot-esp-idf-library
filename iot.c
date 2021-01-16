@@ -22,10 +22,11 @@
 #include "cJSON.h"
 #include "config.h"
 #include "ota.h"
-#include "settings.h"
+#include "esp_ota_ops.h"
 
 
-extern char *iot_device_get_description();
+#define DEVICE_UUID_TEMPLATE "%02x%02x%02x%02x-%02x%02x-40b4-b336-8a36f879111e"
+
 extern void iot_device_event_handler(const char *payload, const size_t len);
 extern void iot_device_init();
 extern void iot_device_deinit();
@@ -60,6 +61,23 @@ MessageBufferHandle_t xMessageBuffer;
 
 TimerHandle_t timer;
 TimerHandle_t ota_timer;
+
+
+void iot_get_app_version(char* name, char* version) {
+  const esp_partition_t *running = esp_ota_get_running_partition();
+  esp_app_desc_t running_app_info;
+  if (esp_ota_get_partition_description(running, &running_app_info) == ESP_OK) {
+      sprintf(version, "%s", running_app_info.version);
+      sprintf(name, "%s", running_app_info.project_name);
+  }
+}
+
+void iot_get_device_uuid(char* uuid) {
+  uint8_t chipid[6];
+  esp_read_mac(chipid, ESP_MAC_WIFI_STA);
+  sprintf(uuid, DEVICE_UUID_TEMPLATE, chipid[0], chipid[1], chipid[2], chipid[3], chipid[4], chipid[5]);
+}
+
 
 void iot_emit_event(IotEvent event_id, uint8_t *data, uint16_t data_len) {
   uint8_t message[data_len + 1];

@@ -30,6 +30,9 @@ typedef enum{
   MSG_TOKEN_REFRESHED
 } IotEvent;
 
+void iot_get_app_version(char* name, char* version);
+void iot_get_device_uuid(char* uuid);
+
 void iot_emit_event(IotEvent event_id, uint8_t* data, uint16_t data_len);
 void iot_init();
 
