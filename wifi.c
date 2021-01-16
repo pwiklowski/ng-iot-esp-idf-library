@@ -11,9 +11,12 @@
 #include "lwip/sys.h"
 
 #include "wifi.h"
-#include "settings.h"
+#include <string.h>
 
 static const char *TAG = "wifi";
+
+extern char* WIFI_SSID;
+extern char* WIFI_PASS;
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -54,11 +57,14 @@ void wifi_init_sta() {
   wifi_config_t wifi_config = {
       .sta =
           {
-              .ssid = WIFI_SSID,
-              .password = WIFI_PASS,
               .pmf_cfg = {.capable = true, .required = false},
           },
   };
+
+
+  memcpy(wifi_config.sta.ssid, WIFI_SSID, strlen(WIFI_SSID)+1);
+  memcpy(wifi_config.sta.password, WIFI_PASS, strlen(WIFI_PASS)+1);
+
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
   ESP_ERROR_CHECK(esp_wifi_start());

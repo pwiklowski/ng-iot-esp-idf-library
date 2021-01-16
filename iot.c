@@ -30,6 +30,16 @@ extern void iot_device_event_handler(const char *payload, const size_t len);
 extern void iot_device_init();
 extern void iot_device_deinit();
 
+extern char* audience;
+extern char* scope;
+extern char* AUTH_TOKEN_URL;
+extern char* AUTH_CODE_URL;
+extern char* IOT_SERVER_URL_TEMPLATE;
+extern int SOFTWARE_UPDATE_CHECK_INTERVAL_MIN;
+extern int TOKEN_REFRESH_INTERVAL_MIN;
+extern char* CLIENT_ID;
+extern char* CLIENT_SECRET;
+
 
 void websocket_open();
 void websocket_close();

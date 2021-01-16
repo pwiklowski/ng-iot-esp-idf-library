@@ -14,9 +14,10 @@
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
 #include "string.h"
-#include "settings.h"
+
 #define TAG "OTA"
 
+extern char* OTA_IMAGE_URL;
 
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
