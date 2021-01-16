@@ -86,6 +86,48 @@ void iot_emit_event(IotEvent event_id, uint8_t *data, uint16_t data_len) {
   xMessageBufferSend(xMessageBuffer, message, sizeof(message), 100 / portTICK_PERIOD_MS);
 }
 
+void iot_create_variable_description(cJSON *vars, char *variable_uuid, char *name, char *access, char *schema, cJSON *value) {
+  cJSON *variable = cJSON_CreateObject();
+
+  cJSON_AddStringToObject(variable, "name", name);
+  cJSON_AddStringToObject(variable, "access", access);
+  cJSON_AddRawToObject(variable, "schema", schema);
+  cJSON_AddItemToObject(variable, "value", value);
+
+  cJSON_AddItemToObject(vars, variable_uuid, variable);
+}
+
+void iot_send_value_changed_notifcation(char *device_uuid, char *variable_uuid, cJSON *value) {
+  cJSON *notification = cJSON_CreateObject();
+
+  cJSON_AddNumberToObject(notification, "type", 6);
+
+  cJSON *args = cJSON_AddObjectToObject(notification, "args");
+
+  cJSON_AddStringToObject(args, "deviceUuid", device_uuid);
+  cJSON_AddStringToObject(args, "variableUuid", variable_uuid);
+  cJSON_AddItemToObject(args, "value", cJSON_Duplicate(value, true));
+
+  char *notification_string = cJSON_Print(notification);
+
+  iot_emit_event(MSG_IOT_VALUE_UPDATED, (uint8_t*) notification_string, strlen(notification_string));
+
+  cJSON_Delete(notification);
+
+  free(notification_string);
+}
+
+void iot_device_send_response(uint32_t req_id, cJSON* res) {
+   cJSON *response= cJSON_CreateObject();
+   cJSON_AddNumberToObject(response, "resId", req_id);
+   cJSON_AddItemToObject(response, "res",  res);
+
+   char *request_string = cJSON_Print(response);
+
+   esp_websocket_client_send(client, request_string, strlen(request_string), 500);
+   cJSON_Delete(response);
+}
+
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
   esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
 
