@@ -13,7 +13,6 @@
 #include "freertos/task.h"
 
 #include "esp_event.h"
-#include "esp_event_loop.h"
 #include "esp_log.h"
 #include "esp_websocket_client.h"
 #include "esp_transport_ws.h"
@@ -23,6 +22,15 @@
 #include "config.h"
 #include "ota.h"
 #include "esp_ota_ops.h"
+
+#include "esp_bt.h"
+#include "esp_bt_defs.h"
+#include "esp_bt_main.h"
+#include "esp_gap_ble_api.h"
+#include "esp_bt_device.h"
+
+#include "esp_tls.h"
+
 
 
 #define DEVICE_UUID_TEMPLATE "%02x%02x%02x%02x-%02x%02x-40b4-b336-8a36f879111e"
@@ -51,9 +59,12 @@ void iot_start();
 
 Config_t config;
 
+const char *grant_type = "refresh_token";
 static const char *TAG = "WEBSOCKET";
 #define BUF_LEN 4096
-char buf[BUF_LEN];
+
+static char buf[BUF_LEN];
+static uint8_t manufacturer_data[11];
 
 esp_websocket_client_handle_t client;
 
@@ -219,13 +230,18 @@ void iot_handle_token_update(char* payload) {
 
   save_config(&config);
 
+  cJSON_Delete(json);
+
   iot_emit_event(MSG_TOKEN_REFRESHED, 0, 0);
 }
 
 void iot_refresh_token() {
-  ESP_LOGI(TAG, "Refresh token");
+  if (strlen(config.refresh_token) == 0) {
+    ESP_LOGI(TAG, "No refresh token. Login");
+    iot_login();
+    return;
+  }
 
-  const char *grant_type = "refresh_token";
   size_t post_data_len = sprintf(buf, "client_id=%s&client_secret=%s&grant_type=%s&refresh_token=%s", CLIENT_ID, CLIENT_SECRET, grant_type, config.refresh_token);
 
   int response_len;
@@ -246,6 +262,36 @@ int iot_check_login_response(char* device_code) {
   return iot_post(AUTH_TOKEN_URL, buf, post_data_len, &response_len);
 }
 
+
+static esp_ble_adv_params_t advParams = {
+    .adv_int_min        = 0x20,
+    .adv_int_max        = 0x40,
+    .adv_type           = ADV_TYPE_IND,
+    .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
+    //.peer_addr            =
+    //.peer_addr_type       =
+    .channel_map        = ADV_CHNL_ALL,
+    .adv_filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+};
+
+void iot_start_ble_adv() {
+  esp_ble_adv_data_t advData = {0};
+  advData.p_manufacturer_data = &manufacturer_data[0];
+  advData.manufacturer_len = 11;
+
+  advData.flag = ESP_BLE_ADV_FLAG_NON_LIMIT_DISC;
+  advData.include_name = true;
+  advData.min_interval = 0x0100;
+  advData.max_interval = 0x0100;
+  esp_ble_gap_config_adv_data(&advData);
+
+  esp_ble_gap_start_advertising(&advParams);
+}
+
+void iot_stop_ble_adv() {
+  esp_ble_gap_stop_advertising();
+}
+
 void iot_handle_login_response(char* payload, size_t size) {
   cJSON *json = cJSON_Parse((char *)payload);
 
@@ -255,17 +301,26 @@ void iot_handle_login_response(char* payload, size_t size) {
 
   ESP_LOGI(TAG, "\n\n\nLogin using this link: %s\n\n\n", verification_uri_complete);
 
+  uint8_t index = strlen(verification_uri_complete)-11;
+
+  memcpy(manufacturer_data, &verification_uri_complete[index], 11);
+
+  iot_start_ble_adv();
+
   for(uint16_t i=0; i<1000; i++) {
     int response_code = iot_check_login_response(device_code);
     ESP_LOGI(TAG, "Response %d",response_code); 
 
     if (response_code == 200) {
       iot_handle_token_update(buf);
+      iot_stop_ble_adv();
       return;
     }
 
     vTaskDelay(10000 / portTICK_PERIOD_MS); // Add timout, use response to calculate interval
   }
+
+  iot_stop_ble_adv();
 }
 
 void iot_login() {
@@ -293,9 +348,6 @@ void iot_handle_event(IotEvent event, const uint8_t* data, const uint16_t data_l
         websocket_open();
       }
 
-      timer = xTimerCreate("refreshTokenTimer", (TOKEN_REFRESH_INTERVAL_MIN*60*1000) / portTICK_PERIOD_MS, pdFALSE
-          , (void*)1, iot_refresh_token);
-      xTimerStart(timer, 0);
 
       break;
     case MSG_WS_CONNECTED:
@@ -320,6 +372,29 @@ void iot_handle_event(IotEvent event, const uint8_t* data, const uint16_t data_l
 void iot_start() {
   read_config(&config);
 
+  esp_err_t ret;
+
+  ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+
+  esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+  ret = esp_bt_controller_init(&bt_cfg);
+  if (ret) {
+      ESP_LOGE(TAG, "%s initialize controller failed\n", __func__);
+      return;
+  }
+
+  ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+  if (ret) {
+      ESP_LOGE(TAG, "%s enable controller failed\n", __func__);
+      return;
+  }
+
+  esp_bluedroid_init();
+  esp_bluedroid_enable();
+  esp_ble_gap_set_device_name("iot");
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_N14);
+
+
   iot_device_init();
   
   xMessageBuffer = xMessageBufferCreate(1000);
@@ -330,6 +405,11 @@ void iot_start() {
   uint8_t buffer[512];
   uint8_t message[] = {MSG_STARTED};
   xMessageBufferSend(xMessageBuffer, message, sizeof(message), 100 / portTICK_PERIOD_MS);
+
+
+  timer = xTimerCreate("refreshTokenTimer", (TOKEN_REFRESH_INTERVAL_MIN*60*1000) / portTICK_PERIOD_MS, pdTRUE
+      , (void*)1, iot_refresh_token);
+  xTimerStart(timer, 0);
 
   while (1) {
     size_t xReceivedBytes = xMessageBufferReceive(xMessageBuffer, buffer, sizeof(buffer), 100 / portTICK_PERIOD_MS);

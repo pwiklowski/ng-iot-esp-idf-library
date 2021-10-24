@@ -4,7 +4,7 @@
 #include "nvs_flash.h"
 
 void read_config(Config_t* config) {
-  nvs_handle_t my_handle;
+  nvs_handle my_handle;
   esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
   if (err != ESP_OK) {
     printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -18,14 +18,13 @@ void read_config(Config_t* config) {
     err = nvs_get_str(my_handle, "refresh_token", config->refresh_token, &config->refresh_token_length);
 
     err = nvs_commit(my_handle);
-    printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
 
     nvs_close(my_handle);
   }
 }
 
 void save_config(Config_t* config) {
-  nvs_handle_t my_handle;
+  nvs_handle my_handle;
   esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
   if (err != ESP_OK) {
     printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
@@ -34,7 +33,6 @@ void save_config(Config_t* config) {
     err = nvs_set_str(my_handle, "refresh_token", config->refresh_token);
 
     err = nvs_commit(my_handle);
-    printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
     nvs_close(my_handle);
   }
 }
